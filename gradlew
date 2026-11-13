@@ -68,3 +68,4 @@ fi
 
 # Locate the wrapper jar or download it
 exec "$JAVACMD" "-Dorg.gradle.appname=$APP_BASE_NAME" -jar "$CLASSPATH" "$@"
+
