@@ -30,26 +30,21 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          set -e
-          gradle assembleDebug --stacktrace --console=plain --no-daemon
+          gradle clean assembleDebug --stacktrace --refresh-dependencies --console=plain --no-daemon
 
       - name: Generate OTA Release Files
         run: |
           mkdir -p dist
           APK_FILE=$(find . -name "*.apk" | head -n 1)
-          if [ -z "$APK_FILE" ]; then
-            echo "Khong tim thay APK! Thu muc goc:"
-            ls -la
-            exit 1
-          fi
-          echo "Tim thay APK: $APK_FILE"
-          cp "$APK_FILE" dist/iptv-player.apk
-          
-          SHA256=$(sha256sum dist/iptv-player.apk | awk '{print $1}')
-          VERSION_CODE=$(grep "versionCode =" app/build.gradle.kts | head -n 1 | awk '{print $3}')
-          VERSION_NAME=$(grep "versionName =" app/build.gradle.kts | head -n 1 | awk '{print $3}' | tr -d '"')
-          
-          cat <<EOF > dist/version.json
+          if [ -n "$APK_FILE" ] && [ -f "$APK_FILE" ]; then
+            echo "Tim thay file APK tai: $APK_FILE"
+            cp "$APK_FILE" dist/iptv-player.apk
+            
+            SHA256=$(sha256sum dist/iptv-player.apk | awk '{print $1}')
+            VERSION_CODE=$(grep "versionCode =" app/build.gradle.kts | head -n 1 | awk '{print $3}')
+            VERSION_NAME=$(grep "versionName =" app/build.gradle.kts | head -n 1 | awk '{print $3}' | tr -d '"')
+            
+            cat <<EOF > dist/version.json
           {
             "versionCode": ${VERSION_CODE:-1},
             "versionName": "${VERSION_NAME:-1.0.0}",
@@ -58,7 +53,12 @@ jobs:
             "changeLog": "Bản phát hành tự động qua GitHub Actions CI/CD"
           }
           EOF
-          echo "Xong dist/version.json"
+            echo "Da tao thanh cong dist/version.json voi SHA-256: $SHA256"
+          else
+            echo "Khong tim thay APK trong toan bo thu muc!"
+            find . -maxdepth 4 -ls || true
+            exit 1
+          fi
 
       - name: Upload APK and Version Manifest
         uses: actions/upload-artifact@v4
