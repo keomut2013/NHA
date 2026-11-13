@@ -10,6 +10,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout Code
@@ -20,6 +21,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: 'gradle'
 
       - name: Setup Gradle 8.11.1
         uses: gradle/actions/setup-gradle@v4
@@ -27,9 +29,19 @@ jobs:
           gradle-version: '8.11.1'
 
       - name: Build Debug APK
-        run: gradle assembleDebug --stacktrace
+        run: |
+          gradle assembleDebug --stacktrace --info --console=plain --warning-mode=all 2>&1 | tee gradle.log
+
+      - name: Upload Build Log (Always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Build-Diagnostics-Log
+          path: gradle.log
+          retention-days: 7
 
       - name: Generate OTA Release Files
+        if: success()
         run: |
           mkdir -p dist
           APK_FILE=$(find app/build/outputs/apk/debug/ -name "*.apk" | head -n 1)
@@ -54,6 +66,7 @@ jobs:
           fi
 
       - name: Upload APK and Version Manifest
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: IPTV-Player-Release
