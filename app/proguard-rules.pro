@@ -3,3 +3,4 @@
 -keep class androidx.media3.** { *; }
 -dontwarn okhttp3.**
 -dontwarn com.google.gson.**
+
