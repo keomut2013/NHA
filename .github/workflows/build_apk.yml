@@ -30,18 +30,10 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          gradle assembleDebug --stacktrace --info --console=plain --warning-mode=all 2>&1 | tee gradle.log
-
-      - name: Upload Build Log (Always)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Build-Diagnostics-Log
-          path: gradle.log
-          retention-days: 7
+          set -e
+          gradle assembleDebug --stacktrace --info --console=plain
 
       - name: Generate OTA Release Files
-        if: success()
         run: |
           mkdir -p dist
           APK_FILE=$(find app/build/outputs/apk/debug/ -name "*.apk" | head -n 1)
@@ -66,7 +58,6 @@ jobs:
           fi
 
       - name: Upload APK and Version Manifest
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: IPTV-Player-Release
