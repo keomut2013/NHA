@@ -1,0 +1,60 @@
+name: Build Android APK (Tu Dong Xuat APK & Version JSON)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant Execute Permission
+        run: chmod +x gradlew || true
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Generate OTA Release Files
+        run: |
+          mkdir -p dist
+          APK_FILE=$(find app/build/outputs/apk/debug/ -name "*.apk" | head -n 1)
+          if [ -f "$APK_FILE" ]; then
+            cp "$APK_FILE" dist/iptv-player.apk
+            test -s dist/iptv-player.apk || exit 1
+            
+            SHA256=$(sha256sum dist/iptv-player.apk | awk '{print $1}')
+            VERSION_CODE=$(grep "versionCode =" app/build.gradle.kts | head -n 1 | awk '{print $3}')
+            VERSION_NAME=$(grep "versionName =" app/build.gradle.kts | head -n 1 | awk '{print $3}' | tr -d '"')
+            
+            cat <<EOF > dist/version.json
+          {
+            "versionCode": ${VERSION_CODE:-1},
+            "versionName": "${VERSION_NAME:-1.0.0}",
+            "apkUrl": "https://raw.githubusercontent.com/\${{ github.repository }}/main/dist/iptv-player.apk",
+            "sha256": "$SHA256",
+            "changeLog": "Bản phát hành tự động qua GitHub Actions CI/CD"
+          }
+          EOF
+            echo "Da tao thanh cong dist/version.json voi SHA-256: $SHA256"
+          fi
+
+      - name: Upload APK and Version Manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: IPTV-Player-Release
+          path: dist/
+          retention-days: 30
