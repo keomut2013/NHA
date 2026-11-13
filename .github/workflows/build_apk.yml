@@ -30,10 +30,7 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          set -o pipefail
-          gradle assembleDebug --stacktrace --console=plain --no-daemon 2>&1 | tee build_log.txt
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.logging.level=info"
+          gradle clean assembleDebug --stacktrace --refresh-dependencies --console=plain --no-daemon 2>&1 | tee build_log.txt
 
       - name: Publish Error Directly to Summary
         if: failure()
