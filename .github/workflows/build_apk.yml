@@ -30,10 +30,21 @@ jobs:
 
       - name: Build Debug APK
         run: |
-          set -e
-          gradle assembleDebug --stacktrace --info --console=plain
+          set -o pipefail
+          gradle assembleDebug --stacktrace --console=plain --no-daemon 2>&1 | tee build_log.txt
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.logging.level=info"
+
+      - name: Publish Error Directly to Summary
+        if: failure()
+        run: |
+          echo "## ❌ Chi Tiết Lỗi Biên Dịch Từ Trình Biên Dịch" >> $GITHUB_STEP_SUMMARY
+          echo '```text' >> $GITHUB_STEP_SUMMARY
+          tail -n 120 build_log.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Generate OTA Release Files
+        if: success()
         run: |
           mkdir -p dist
           APK_FILE=$(find app/build/outputs/apk/debug/ -name "*.apk" | head -n 1)
@@ -58,6 +69,7 @@ jobs:
           fi
 
       - name: Upload APK and Version Manifest
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: IPTV-Player-Release
