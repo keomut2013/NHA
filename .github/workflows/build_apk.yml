@@ -41,13 +41,15 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Generate OTA Release Files
-        if: success()
         run: |
           mkdir -p dist
-          APK_FILE=$(find app/build/outputs/apk/debug/ -name "*.apk" | head -n 1)
-          if [ -f "$APK_FILE" ]; then
+          echo "Danh sach tat ca cac file apk duoc build ra:"
+          find app/build/outputs/ -type f || true
+          
+          APK_FILE=$(find app/build/outputs/ -name "*.apk" | head -n 1)
+          if [ -n "$APK_FILE" ] && [ -f "$APK_FILE" ]; then
+            echo "Tim thay APK tai: $APK_FILE"
             cp "$APK_FILE" dist/iptv-player.apk
-            test -s dist/iptv-player.apk || exit 1
             
             SHA256=$(sha256sum dist/iptv-player.apk | awk '{print $1}')
             VERSION_CODE=$(grep "versionCode =" app/build.gradle.kts | head -n 1 | awk '{print $3}')
@@ -63,12 +65,15 @@ jobs:
           }
           EOF
             echo "Da tao thanh cong dist/version.json voi SHA-256: $SHA256"
+          else
+            echo "KHONG TIM THAY FILE APK NAO TRONG app/build/outputs/!"
+            exit 1
           fi
 
       - name: Upload APK and Version Manifest
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: IPTV-Player-Release
           path: dist/
+          if-no-files-found: error
           retention-days: 30
