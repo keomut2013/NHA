@@ -20,13 +20,14 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
-      - name: Grant Execute Permission
-        run: chmod +x gradlew || true
+      - name: Setup Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: gradle assembleDebug --stacktrace
 
       - name: Generate OTA Release Files
         run: |
@@ -44,7 +45,7 @@ jobs:
           {
             "versionCode": ${VERSION_CODE:-1},
             "versionName": "${VERSION_NAME:-1.0.0}",
-            "apkUrl": "https://raw.githubusercontent.com/\${{ github.repository }}/main/dist/iptv-player.apk",
+            "apkUrl": "https://raw.githubusercontent.com/${{ github.repository }}/main/dist/iptv-player.apk",
             "sha256": "$SHA256",
             "changeLog": "Bản phát hành tự động qua GitHub Actions CI/CD"
           }
